@@ -49,13 +49,14 @@ The project is built entirely using **free and open-source technologies**, with 
 - 📋 Assign grievances to specific departments
 - ✍️ Add resolution notes and update ticket status
 - 📈 View analytics dashboard (total, open, in-progress, resolved counts)
-- 🏢 Create and manage departments
+- 👥 View read-only list of colleagues (other officials)
 
-### Admin (241030@tkmce.ac.in only)
+### Admin (`241030@tkmce.ac.in` only)
 - 👑 All official capabilities
 - ✅ Review and approve/reject official upgrade requests from citizens
 - 👥 Manage officials — view all current officials and remove them if needed
 - 🔒 Only account with admin privileges — set directly in the database
+- 🏢 Create and manage departments
 
 ---
 
@@ -167,7 +168,7 @@ score         INTEGER (1–5)
 created_at    TIMESTAMP
 ```
 
-**official_requests** *(new)*
+**official_requests**
 ```
 id            SERIAL PRIMARY KEY
 user_id       FK → users.id (UNIQUE)
@@ -185,37 +186,37 @@ reviewed_at   TIMESTAMP (nullable)
 ShaktiDB_Project/
 │
 ├── backend/
-│   ├── venv/                        # Python virtual environment
+│   ├── venv/                          # Python virtual environment
 │   ├── routers/
 │   │   ├── __init__.py
-│   │   ├── auth.py                  # JWT register/login, password hashing
-│   │   ├── grievances.py            # Submit, track, timeline, rate
-│   │   ├── admin.py                 # Dashboard, assign, status, analytics
-│   │   ├── requests.py              # Official upgrade requests + management
-│   │   └── dependencies.py          # JWT validation, role guards
-│   ├── models.py                    # SQLAlchemy ORM models
-│   ├── schemas.py                   # Pydantic request/response schemas
-│   ├── database.py                  # ShaktiDB connection (psycopg2 on :5433)
-│   ├── main.py                      # FastAPI app, CORS, router registration
-│   ├── .env                         # Environment variables (not committed)
-│   └── requirements.txt             # Python dependencies
+│   │   ├── auth.py                    # JWT register/login, password hashing
+│   │   ├── grievances.py              # Submit, track, timeline, rate
+│   │   ├── admin.py                   # Dashboard, assign, status, analytics
+│   │   ├── requests.py                # Official upgrade requests + management
+│   │   └── dependencies.py            # JWT validation, role guards
+│   ├── models.py                      # SQLAlchemy ORM models
+│   ├── schemas.py                     # Pydantic request/response schemas
+│   ├── database.py                    # ShaktiDB connection (psycopg2 on :5433)
+│   ├── main.py                        # FastAPI app, CORS, router registration
+│   ├── .env                           # Environment variables (not committed)
+│   └── requirements.txt               # Python dependencies
 │
 ├── frontend/
 │   ├── src/
 │   │   ├── api/
-│   │   │   └── axios.ts             # Axios instance with JWT interceptor
+│   │   │   └── axios.ts               # Axios instance with JWT interceptor
 │   │   ├── pages/
-│   │   │   ├── LoginPage.tsx        # Login form
-│   │   │   ├── RegisterPage.tsx     # Citizen-only registration
-│   │   │   ├── ForgotPasswordPage.tsx # Password recovery
-│   │   │   ├── DashboardPage.tsx    # Citizen grievance list
-│   │   │   ├── SubmitPage.tsx       # Submit new grievance
-│   │   │   ├── TrackPage.tsx        # Grievance detail + timeline
-│   │   │   ├── AdminPage.tsx        # Admin dashboard + official management
-│   │   │   └── RequestOfficialPage.tsx # Apply to become official
-│   │   ├── components/              # Reusable UI components
-│   │   ├── App.tsx                  # Routes + PrivateRoute guard
-│   │   └── main.tsx                 # React entry point
+│   │   │   ├── LoginPage.tsx          # Login form
+│   │   │   ├── RegisterPage.tsx       # Citizen-only registration (no role picker)
+│   │   │   ├── ForgotPasswordPage.tsx # Password recovery flow
+│   │   │   ├── DashboardPage.tsx      # Citizen grievance list
+│   │   │   ├── SubmitPage.tsx         # Submit new grievance form
+│   │   │   ├── TrackPage.tsx          # Grievance detail + status timeline
+│   │   │   ├── AdminPage.tsx          # Shared dashboard (admin + official views)
+│   │   │   └── RequestOfficialPage.tsx# Apply to become official
+│   │   ├── components/                # Reusable UI components
+│   │   ├── App.tsx                    # Routes + PrivateRoute guard
+│   │   └── main.tsx                   # React entry point
 │   ├── tailwind.config.js
 │   ├── postcss.config.js
 │   ├── tsconfig.json
@@ -280,7 +281,7 @@ Run the backend:
 
 ```bash
 uvicorn main:app --reload
-# API: http://localhost:8000
+# API:  http://localhost:8000
 # Docs: http://localhost:8000/docs
 ```
 
@@ -306,7 +307,7 @@ INSERT INTO departments (name) VALUES
 
 ### 6. Set up the admin account
 
-Register normally at `/register` using `241030@tkmce.ac.in`, then run:
+Register normally at `/register` using `241030@tkmce.ac.in`, then run in pgAdmin or psql:
 
 ```sql
 UPDATE users SET role = 'admin' WHERE email = '241030@tkmce.ac.in';
@@ -346,21 +347,32 @@ UPDATE users SET role = 'admin' WHERE email = '241030@tkmce.ac.in';
 |---|---|---|---|
 | POST | `/requests/official` | Submit upgrade request | Citizen |
 | GET | `/requests/official/my` | Check own request status | Citizen |
-| GET | `/requests/official/all` | View all pending requests | Admin |
+| GET | `/requests/official/all` | View all requests | Admin |
 | PUT | `/requests/official/{id}/approve` | Approve request | Admin |
 | PUT | `/requests/official/{id}/reject` | Reject request | Admin |
-| GET | `/requests/officials/all` | List all current officials | Admin |
+| GET | `/requests/officials/all` | List all officials (with details) | Admin |
 | PUT | `/requests/officials/{id}/remove` | Remove an official | Admin |
+| GET | `/requests/officials/colleagues` | Read-only colleagues list | Official |
 
 ---
 
 ## User Roles
 
-| Role | How assigned | Capabilities |
+| Role | How Assigned | Dashboard Title | Capabilities |
+|---|---|---|---|
+| **Citizen** | Self-register at `/register` | — | Submit grievances, track status, view timeline, rate resolutions, apply to become official |
+| **Official** | Admin approves upgrade request | Official Dashboard | View all grievances, assign departments, update status, view analytics, view colleagues list |
+| **Admin** | Set manually in DB (`241030@tkmce.ac.in`) | Admin Dashboard | All official capabilities + approve/reject requests + manage/remove officials + create departments |
+
+### Dashboard view by role
+
+| Section | Admin | Official |
 |---|---|---|
-| **Citizen** | Self-register at `/register` | Submit grievances, track status, view timeline, rate resolutions, apply to become official |
-| **Official** | Admin approves upgrade request | View all grievances, assign departments, update status, view analytics |
-| **Admin** | Set manually in DB (`241030@tkmce.ac.in`) | All official capabilities + approve/reject official requests + manage/remove officials |
+| Analytics cards | ✅ | ✅ |
+| Pending official requests | ✅ | ❌ |
+| Manage Officials (with Remove) | ✅ | ❌ |
+| My Colleagues (read-only) | ❌ | ✅ |
+| All Grievances + Update status | ✅ | ✅ |
 
 ---
 
@@ -375,27 +387,50 @@ UPDATE users SET role = 'admin' WHERE email = '241030@tkmce.ac.in';
 | Data directory | `/data/sdb` |
 | Connect command | `sudo -u postgres /usr/lib/postgresql/17.7.1.1/bin/psql -p 5433` |
 | pgAdmin 4 host | `/tmp` with port `5433` |
-| pydantic email | Must run `pip install "pydantic[email]"` separately |
+| pydantic email | Run `pip install "pydantic[email]"` separately after requirements |
 | bcrypt | Version 5.0.0 — do not use passlib |
 | Node.js | Requires v20.x+ (Vite 8 requirement) |
 | Tailwind CSS | Must use v3.4.17 — v4 has breaking changes |
-| Admin account | Must be set manually in DB after registration |
+| venv activation | Always run `source venv/bin/activate` before `uvicorn` |
+| Admin account | Must be set manually in DB after registering normally |
+| Role restriction | Registration is locked to citizen — no role picker in UI |
 
 ---
 
 ## Screenshots
 
-> *(Add screenshots before submission)*
-
 - Login page (`/login`)
+  <img width="614" height="758" alt="Screenshot from 2026-07-26 19-31-43" src="https://github.com/user-attachments/assets/93392185-19ba-4d84-86a7-54490265cc13" />
+
 - Registration page (`/register`)
+  <img width="523" height="609" alt="Screenshot from 2026-07-26 19-53-23" src="https://github.com/user-attachments/assets/2ec0a6bc-723e-48d7-a352-0232ba846db6" />
+
 - Forgot password (`/forgot-password`)
+  <img width="514" height="536" alt="Screenshot from 2026-07-26 19-54-05" src="https://github.com/user-attachments/assets/2397435a-a799-40a1-88d2-7b557aa44abf" />
+
 - Citizen dashboard (`/dashboard`)
+  <img width="1803" height="957" alt="Screenshot from 2026-07-26 19-31-11" src="https://github.com/user-attachments/assets/948e1f0c-4978-46fe-acc7-e4be56b6e316" />
+
 - Submit grievance form (`/submit`)
+  <img width="707" height="619" alt="Screenshot from 2026-07-26 19-55-47" src="https://github.com/user-attachments/assets/04ea05e1-de03-49e9-82ba-9f68e6656b70" />
+
 - Grievance tracking & timeline (`/track/:id`)
+  <img width="665" height="643" alt="Screenshot from 2026-07-26 19-59-01" src="https://github.com/user-attachments/assets/ca3839bd-3208-4691-b9d7-6a5a1bd65328" />
+
 - Apply as official (`/request-official`)
+  <img width="660" height="391" alt="image" src="https://github.com/user-attachments/assets/d6f9141c-a598-4e19-a4b9-87732c4f6dfc" />
+
 - Admin dashboard — analytics, pending requests, manage officials, grievances (`/admin`)
+  <img width="1793" height="946" alt="Screenshot from 2026-07-26 19-32-46" src="https://github.com/user-attachments/assets/9c7efcbf-e6b6-4682-9add-6fb402b191f6" />
+
+- Official dashboard — analytics, colleagues list, grievances (`/admin`)
+  <img width="1793" height="946" alt="Screenshot from 2026-07-26 19-45-03" src="https://github.com/user-attachments/assets/b2595853-2eb3-4287-8dac-a69c6a022afb" />
+
 - pgAdmin 4 showing ShaktiDB tables
+  <img width="1855" height="1048" alt="Screenshot from 2026-07-26 20-03-55" src="https://github.com/user-attachments/assets/a597a1b3-d642-49d2-8f38-06c44a4c4d29" />
+
+  <img width="1855" height="1048" alt="Screenshot from 2026-07-26 20-04-05" src="https://github.com/user-attachments/assets/1476b75c-0ced-4817-8b74-19d8edca43e6" />
+
 
 ---
 
@@ -423,4 +458,4 @@ This project is built entirely on open-source technologies. Refer to the Tech St
 
 ---
 
-*Last Updated: June 2026 | Repository: [ShaktiDB_Project](https://github.com/Abhijith2005binu/ShaktiDB_Project)*
+*Last Updated: July 2026 | Repository: [ShaktiDB_Project](https://github.com/Abhijith2005binu/ShaktiDB_Project)*
