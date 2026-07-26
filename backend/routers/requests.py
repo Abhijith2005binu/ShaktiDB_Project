@@ -166,3 +166,25 @@ def remove_official(
 
     db.commit()
     return {"message": f"{user.name} has been removed as official and reverted to citizen"}
+
+@router.get("/officials/colleagues")
+def view_colleagues(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role not in (RoleEnum.official, RoleEnum.admin):
+        raise HTTPException(status_code=403, detail="Officials only")
+    
+    colleagues = db.query(User).filter(
+        User.role == RoleEnum.official,
+        User.id != current_user.id  # exclude themselves
+    ).all()
+    
+    return [
+        {
+            "id": u.id,
+            "name": u.name,
+            "email": u.email,
+        }
+        for u in colleagues
+    ]

@@ -14,8 +14,7 @@ interface Official {
   id: number;
   name: string;
   email: string;
-  role: string;
-  created_at: string;
+  created_at?: string;
 }
 
 interface Grievance {
@@ -52,6 +51,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const name = localStorage.getItem("name");
+  const role = localStorage.getItem("role");
+  const isAdmin = role === "admin";
 
   const fetchData = useCallback(() => {
     API.get("/admin/grievances")
@@ -59,13 +60,20 @@ export default function AdminPage() {
       .catch(() => navigate("/login"));
     API.get("/admin/analytics")
       .then((res) => setAnalytics(res.data));
-    API.get("/requests/official/all")
-      .then((res) => setRequests(res.data))
-      .catch(() => {});
-    API.get("/requests/officials/all")
-      .then((res) => setOfficials(res.data))
-      .catch(() => {});
-  }, [navigate]);
+
+    if (isAdmin) {
+      API.get("/requests/official/all")
+        .then((res) => setRequests(res.data))
+        .catch(() => {});
+      API.get("/requests/officials/all")
+        .then((res) => setOfficials(res.data))
+        .catch(() => {});
+    } else {
+      API.get("/requests/officials/colleagues")
+        .then((res) => setOfficials(res.data))
+        .catch(() => {});
+    }
+  }, [navigate, isAdmin]);
 
   useEffect(() => {
     fetchData();
@@ -89,9 +97,9 @@ export default function AdminPage() {
     }
   };
 
-  const handleRemoveOfficial = async (id: number, name: string) => {
+  const handleRemoveOfficial = async (id: number, officialName: string) => {
     const confirmed = window.confirm(
-      `Are you sure you want to remove ${name} as an official? They will be reverted to citizen.`
+      `Are you sure you want to remove ${officialName} as an official? They will be reverted to citizen.`
     );
     if (!confirmed) return;
     try {
@@ -127,7 +135,9 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-gray-100">
       <nav className="bg-green-700 text-white px-6 py-4 flex justify-between items-center">
-        <h1 className="text-xl font-bold">Admin Dashboard</h1>
+        <h1 className="text-xl font-bold">
+          {isAdmin ? "Admin Dashboard" : "Official Dashboard"}
+        </h1>
         <div className="flex items-center gap-4">
           <span className="text-sm">Hello, {name}</span>
           <button
@@ -161,8 +171,8 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Pending Official Requests */}
-        {pendingRequests.length > 0 && (
+        {/* Pending Official Requests — Admin only */}
+        {isAdmin && pendingRequests.length > 0 && (
           <div className="bg-white rounded-2xl shadow overflow-hidden">
             <div className="p-5 border-b flex justify-between items-center">
               <h2 className="text-lg font-semibold text-gray-800">
@@ -206,42 +216,79 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Manage Officials */}
-        <div className="bg-white rounded-2xl shadow overflow-hidden">
-          <div className="p-5 border-b flex justify-between items-center">
-            <h2 className="text-lg font-semibold text-gray-800">
-              Manage Officials
-            </h2>
-            <span className="bg-blue-100 text-blue-700 text-xs font-medium px-3 py-1 rounded-full">
-              {officials.length} official{officials.length !== 1 ? "s" : ""}
-            </span>
-          </div>
-          {officials.length === 0 ? (
-            <div className="p-6 text-center text-gray-400 text-sm">
-              No officials yet. Approve requests above to add officials.
+        {/* Admin — Full Officials Management */}
+        {isAdmin && (
+          <div className="bg-white rounded-2xl shadow overflow-hidden">
+            <div className="p-5 border-b flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-800">
+                Manage Officials
+              </h2>
+              <span className="bg-blue-100 text-blue-700 text-xs font-medium px-3 py-1 rounded-full">
+                {officials.length} official{officials.length !== 1 ? "s" : ""}
+              </span>
             </div>
-          ) : (
-            <div className="divide-y">
-              {officials.map((official) => (
-                <div key={official.id} className="p-5 flex justify-between items-center">
-                  <div>
-                    <p className="font-medium text-gray-800">{official.name}</p>
-                    <p className="text-sm text-gray-500">{official.email}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      Official since {new Date(official.created_at).toLocaleDateString()}
-                    </p>
+            {officials.length === 0 ? (
+              <div className="p-6 text-center text-gray-400 text-sm">
+                No officials yet. Approve requests above to add officials.
+              </div>
+            ) : (
+              <div className="divide-y">
+                {officials.map((official) => (
+                  <div key={official.id} className="p-5 flex justify-between items-center">
+                    <div>
+                      <p className="font-medium text-gray-800">{official.name}</p>
+                      <p className="text-sm text-gray-500">{official.email}</p>
+                      {official.created_at && (
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          Official since {new Date(official.created_at).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => handleRemoveOfficial(official.id, official.name)}
+                      className="bg-red-100 text-red-700 px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-red-200 transition"
+                    >
+                      Remove Official
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleRemoveOfficial(official.id, official.name)}
-                    className="bg-red-100 text-red-700 px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-red-200 transition"
-                  >
-                    Remove Official
-                  </button>
-                </div>
-              ))}
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Official — Read-only Colleagues List */}
+        {!isAdmin && (
+          <div className="bg-white rounded-2xl shadow overflow-hidden">
+            <div className="p-5 border-b flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-800">
+                My Colleagues
+              </h2>
+              <span className="bg-blue-100 text-blue-700 text-xs font-medium px-3 py-1 rounded-full">
+                {officials.length} colleague{officials.length !== 1 ? "s" : ""}
+              </span>
             </div>
-          )}
-        </div>
+            {officials.length === 0 ? (
+              <div className="p-6 text-center text-gray-400 text-sm">
+                No other officials yet.
+              </div>
+            ) : (
+              <div className="divide-y">
+                {officials.map((official) => (
+                  <div key={official.id} className="p-5 flex items-center gap-4">
+                    <div className="w-9 h-9 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-semibold text-sm flex-shrink-0">
+                      {official.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-800">{official.name}</p>
+                      <p className="text-sm text-gray-500">{official.email}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* All Grievances */}
         <div className="bg-white rounded-2xl shadow overflow-hidden">
@@ -264,15 +311,11 @@ export default function AdminPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span
-                      className={`text-xs font-medium px-3 py-1 rounded-full ${statusColors[g.status]}`}
-                    >
+                    <span className={`text-xs font-medium px-3 py-1 rounded-full ${statusColors[g.status]}`}>
                       {g.status.replace("_", " ").toUpperCase()}
                     </span>
                     <button
-                      onClick={() =>
-                        setSelectedId(selectedId === g.id ? null : g.id)
-                      }
+                      onClick={() => setSelectedId(selectedId === g.id ? null : g.id)}
                       className="text-sm bg-green-700 text-white px-3 py-1 rounded-lg hover:bg-green-800"
                     >
                       Update
