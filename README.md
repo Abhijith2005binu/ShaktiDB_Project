@@ -400,33 +400,43 @@ UPDATE users SET role = 'admin' WHERE email = '241030@tkmce.ac.in';
 ## Screenshots
 
 - Login page (`/login`)
+  
   <img width="614" height="758" alt="Screenshot from 2026-07-26 19-31-43" src="https://github.com/user-attachments/assets/93392185-19ba-4d84-86a7-54490265cc13" />
 
 - Registration page (`/register`)
+  
   <img width="523" height="609" alt="Screenshot from 2026-07-26 19-53-23" src="https://github.com/user-attachments/assets/2ec0a6bc-723e-48d7-a352-0232ba846db6" />
 
 - Forgot password (`/forgot-password`)
+  
   <img width="514" height="536" alt="Screenshot from 2026-07-26 19-54-05" src="https://github.com/user-attachments/assets/2397435a-a799-40a1-88d2-7b557aa44abf" />
 
 - Citizen dashboard (`/dashboard`)
+  
   <img width="1803" height="957" alt="Screenshot from 2026-07-26 19-31-11" src="https://github.com/user-attachments/assets/948e1f0c-4978-46fe-acc7-e4be56b6e316" />
 
 - Submit grievance form (`/submit`)
+  
   <img width="707" height="619" alt="Screenshot from 2026-07-26 19-55-47" src="https://github.com/user-attachments/assets/04ea05e1-de03-49e9-82ba-9f68e6656b70" />
 
 - Grievance tracking & timeline (`/track/:id`)
+  
   <img width="665" height="643" alt="Screenshot from 2026-07-26 19-59-01" src="https://github.com/user-attachments/assets/ca3839bd-3208-4691-b9d7-6a5a1bd65328" />
 
 - Apply as official (`/request-official`)
+  
   <img width="660" height="391" alt="image" src="https://github.com/user-attachments/assets/d6f9141c-a598-4e19-a4b9-87732c4f6dfc" />
 
 - Admin dashboard — analytics, pending requests, manage officials, grievances (`/admin`)
+  
   <img width="1793" height="946" alt="Screenshot from 2026-07-26 19-32-46" src="https://github.com/user-attachments/assets/9c7efcbf-e6b6-4682-9add-6fb402b191f6" />
 
 - Official dashboard — analytics, colleagues list, grievances (`/admin`)
+  
   <img width="1793" height="946" alt="Screenshot from 2026-07-26 19-45-03" src="https://github.com/user-attachments/assets/b2595853-2eb3-4287-8dac-a69c6a022afb" />
 
 - pgAdmin 4 showing ShaktiDB tables
+  
   <img width="1855" height="1048" alt="Screenshot from 2026-07-26 20-03-55" src="https://github.com/user-attachments/assets/a597a1b3-d642-49d2-8f38-06c44a4c4d29" />
 
   <img width="1855" height="1048" alt="Screenshot from 2026-07-26 20-04-05" src="https://github.com/user-attachments/assets/1476b75c-0ced-4817-8b74-19d8edca43e6" />
